@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}情绪指标 · Investment Guide{% endblock %}
+{% block body %}
+<header class="company-header">
+  <a class="back-link" href="{{ url_for('sentiment') if indicator else url_for('index') }}" aria-label="返回">‹</a>
+  <div><h1>{{ '成交量' if indicator == 'amount' else '炸板率' if indicator else '情绪指标' }}</h1><p>每日市场数据</p></div>
+  <div class="header-actions"><div class="theme-switcher" aria-label="主题"><button type="button" data-theme-option="light">Light</button><button type="button" data-theme-option="gold">Black Gold</button></div></div>
+</header>
+{% if not indicator %}
+<section class="panel"><div class="link-list">
+  <a href="{{ url_for('sentiment_amount') }}"><strong>成交量</strong><span>查看每日沪深成交额 ›</span></a>
+  <a href="{{ url_for('sentiment_break_rate') }}"><strong>炸板率</strong><span>查看每日涨停数、炸板数与炸板率 ›</span></a>
+</div></section>
+{% elif indicator == 'amount' %}
+<section class="panel">
+  <h2>每日成交额</h2>
+  <p class="muted">单位：亿元。按你的指数口径：上证指数（sh.000001）＋深证成指（sz.399001）。日期为中国交易日，最新日期在前。</p>
+  <div class="sentiment-table-wrap"><table class="sentiment-table">
+    <thead><tr><th scope="col">日期</th><th scope="col">沪市</th><th scope="col">深市</th><th scope="col">合计</th></tr></thead>
+    <tbody>{% for row in rows %}<tr><td>{{ row.date }}</td><td>{{ '{:,.2f}'.format(row.sh_amount / 100000000) }}</td><td>{{ '{:,.2f}'.format(row.sz_amount / 100000000) }}</td><td>{{ '{:,.2f}'.format(row.total_amount / 100000000) }}</td></tr>
+    {% else %}<tr><td colspan="4" class="empty-state">暂无成交额数据，首次采集后显示。</td></tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+{% else %}
+<section class="panel"><h2>每日炸板率</h2><p class="muted">炸板率＝炸板股数 ÷（涨停股数＋炸板股数）。采用东方财富涨停池与炸板池口径；日期为中国交易日。空数据不记为零。</p>
+<div class="sentiment-table-wrap"><table class="sentiment-table"><thead><tr><th scope="col">日期</th><th scope="col">涨停股数</th><th scope="col">炸板股数</th><th scope="col">炸板率</th></tr></thead><tbody>
+{% for row in rows %}<tr><td>{{ row.date }}</td><td>{{ row.zt_count }}</td><td>{{ row.zb_count }}</td><td>{{ '{:.2%}'.format(row.break_rate) }}</td></tr>
+{% else %}<tr><td colspan="4" class="empty-state">暂无炸板率数据，首次采集后显示。</td></tr>{% endfor %}
+</tbody></table></div></section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily market amounts at 10:00 Vancouver time
+
+[Timer]
+OnCalendar=*-*-* 10:00:00 America/Vancouver
+Persistent=true
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

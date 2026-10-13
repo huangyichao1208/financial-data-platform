@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% block title %}{{ stock.name }} · Investment Guide{% endblock %}
+{% block body %}
+<div id="top"></div>
+<header class="company-header">
+  <a class="back-link" href="{{ back_url }}" title="Back">‹</a>
+  <div>
+    <h1>{{ stock.name }} {{ stock.code }}</h1>
+    <p>
+      {% if gap %}
+        {{ gap.announcement_date }} · Gap {{ '%+.2f%%'|format(gap.gap_gain * 100) }}
+      {% else %}
+        Company Details
+      {% endif %}
+    </p>
+  </div>
+  <div class="header-actions">
+    <div class="theme-switcher" aria-label="Theme switcher">
+      <button type="button" data-theme-option="light">Light</button>
+      <button type="button" data-theme-option="gold">Black Gold</button>
+    </div>
+    <button class="icon-button" data-refresh="{{ stock.code }}" title="Refresh from AkShare">↻</button>
+  </div>
+</header>
+
+<nav class="detail-tabs" aria-label="Company sections">
+  <a href="#info" class="active">Info</a>
+  <a href="#shareholders">Shareholders</a>
+  <a href="#reports">Annual Reports</a>
+  <a href="#research">Research</a>
+  <a href="#broker-interfaces">Broker Interfaces</a>
+  <a href="#notes">Notes</a>
+</nav>
+
+<section id="info" class="panel">
+  <div class="panel-title">
+    <h2>Company Info</h2>
+    <span>{{ info.fetched_at if info and info.fetched_at else 'Not refreshed yet' }}</span>
+  </div>
+  <div class="info-grid">
+    <article>
+      <span>Main Business</span>
+      <p>{{ info.main_business if info and info.main_business else 'Refresh to load company info.' }}</p>
+    </article>
+    <article>
+      <span>Product Names</span>
+      <p>{{ info.product_names if info and info.product_names else 'No data yet.' }}</p>
+    </article>
+    <article>
+      <span>Business Scope</span>
+      <p>{{ info.business_scope if info and info.business_scope else 'No data yet.' }}</p>
+    </article>
+    <article>
+      <span>Registered Address</span>
+      <p>{{ info.registered_address if info and info.registered_address else 'No data yet.' }}</p>
+    </article>
+    <article>
+      <span>Office Address</span>
+      <p>{{ info.office_address if info and info.office_address else 'No data yet.' }}</p>
+    </article>
+  </div>
+</section>
+
+<section id="shareholders" class="panel">
+  <div class="panel-title">
+    <h2>Top Shareholders</h2>
+    <span>{{ holder_period or 'No data' }}</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Shareholder</th><th>Holding Ratio</th><th>Change Ratio</th><th>Remark</th></tr>
+      </thead>
+      <tbody>
+        {% for holder in holders %}
+          <tr>
+            <td>{{ holder.name }}</td>
+            <td>{{ holder.holding_ratio }}</td>
+            <td>{{ holder.change_ratio }}</td>
+            <td><span class="status-pill">{{ holder.remark }}</span></td>
+          </tr>
+        {% else %}
+          <tr><td colspan="4">Refresh to load shareholder data.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="reports" class="panel">
+  <div class="panel-title">
+    <h2>Annual Reports</h2>
+    <span>Recent 5-year window</span>
+  </div>
+  <div class="link-list">
+    {% for report in annual_reports %}
+      <a href="{{ report.url or '#' }}" target="_blank" rel="noreferrer">
+        <strong>{{ report.title }}</strong>
+        <span>{{ report.announcement_date }}</span>
+      </a>
+    {% else %}
+      <p class="empty-line">Refresh to load annual reports.</p>
+    {% endfor %}
+  </div>
+</section>
+
+<section id="research" class="panel">
+  <div class="panel-title">
+    <h2>Research Reports</h2>
+    <span>{{ research_reports|length }} items</span>
+  </div>
+  <div class="research-list">
+    {% for report in research_reports %}
+      {% if report.pdf_url %}
+        <a class="research-card" href="{{ report.pdf_url }}" target="_blank" rel="noreferrer">
+          <strong>{{ report.title }}</strong>
+          <span>{{ report.institution }} · {{ report.report_date }} · PDF</span>
+        </a>
+      {% else %}
+        <div class="research-card disabled">
+          <strong>{{ report.title }}</strong>
+          <span>{{ report.institution }} · {{ report.report_date }} · No PDF link</span>
+        </div>
+      {% endif %}
+    {% else %}
+      <p class="empty-line">Refresh to load research reports.</p>
+    {% endfor %}
+  </div>
+</section>
+
+<section id="broker-interfaces" class="panel">
+  <div class="panel-title">
+    <h2>Broker Interfaces</h2>
+    <span>External chart pages</span>
+  </div>
+  <div class="link-list">
+    <a href="https://stockpage.10jqka.com.cn/{{ stock.code }}/" target="_blank" rel="noreferrer">
+      <strong>Open Tonghuashun K-Line Page</strong>
+      <span>https://stockpage.10jqka.com.cn/{{ stock.code }}/</span>
+    </a>
+    {% set xueqiu_market = 'BJ' if stock.code.startswith(('4', '8', '92')) else ('SH' if stock.code.startswith(('6', '9')) else 'SZ') %}
+    <a href="https://xueqiu.com/S/{{ xueqiu_market }}{{ stock.code }}" target="_blank" rel="noreferrer">
+      <strong>Open Xueqiu Mobile Page</strong>
+      <span>https://xueqiu.com/S/{{ xueqiu_market }}{{ stock.code }}</span>
+    </a>
+    <a href="https://www.tradingview.com/chart/nboywMkl/?symbol={{ stock.code }}" target="_blank" rel="noreferrer">
+      <strong>Open TradingView Chart</strong>
+      <span>https://www.tradingview.com/chart/nboywMkl/?symbol={{ stock.code }}</span>
+    </a>
+  </div>
+</section>
+
+<section id="notes" class="panel">
+  <div class="panel-title">
+    <h2>Notes</h2>
+    <span>{{ note_pages|length }} pages</span>
+  </div>
+  <div class="note-page-tabs" data-note-tabs>
+    <button type="button" class="{{ 'active' if not note_pages else '' }}" data-page-target="new">New Page</button>
+    {% for page in note_pages %}
+      <button type="button" class="{{ 'active' if loop.first else '' }}" data-page-target="{{ page.id }}">{{ page.title }}</button>
+    {% endfor %}
+  </div>
+
+  <form method="post" action="{{ url_for('save_note_page', code=stock.code, source=source, year=selected_year, quarter=selected_quarter, sort=sort) }}" class="rich-note-form" data-note-form>
+    <input type="hidden" name="page_id" data-page-id>
+    <label>Page Title
+      <input type="text" name="title" value="" placeholder="Untitled Note" data-page-title>
+    </label>
+    <input type="hidden" name="content_html" data-note-content>
+    <div class="editor-toolbar">
+      <button type="button" data-command="bold">B</button>
+      <button type="button" data-command="italic">I</button>
+      <button type="button" data-link title="Select text, then set its URL">Link</button>
+      <label class="file-tool">Image <input type="file" accept="image/*" data-image></label>
+    </div>
+    <div class="rich-editor" contenteditable="true" data-editor></div>
+    <div class="note-actions">
+      <button class="primary-button" type="submit">Save Page</button>
+      <button class="secondary-button" type="submit">Rename</button>
+      <button class="danger-button" type="submit" form="delete-note-page-form" data-delete-note>Delete</button>
+    </div>
+  </form>
+
+  <form id="delete-note-page-form" method="post" action="{{ url_for('delete_note_page', code=stock.code, source=source, year=selected_year, quarter=selected_quarter, sort=sort) }}">
+    <input type="hidden" name="page_id" data-delete-page-id>
+  </form>
+
+  <script type="application/json" data-note-pages-json>
+    {{ note_pages|tojson }}
+  </script>
+</section>
+
+<form method="post" action="{{ url_for('delete_company', code=stock.code, source=source, year=selected_year, quarter=selected_quarter, sort=sort) }}" class="danger-zone">
+  <button type="submit">Remove From Watchlist</button>
+</form>
+
+<div class="toast" data-toast></div>
+<a class="top-anchor" href="#top" title="Back to top">↑</a>
+{% endblock %}

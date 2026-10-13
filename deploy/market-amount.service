@@ -1,0 +1,10 @@
+[Unit]
+Description=Fetch daily market amounts and break rate
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/finance-app
+ExecStart=/opt/finance-app/.venv/bin/python /opt/finance-app/collect_sentiment.py
+TimeoutStartSec=510

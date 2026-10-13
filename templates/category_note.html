@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}General Note · {{ source_label }}{% endblock %}
+{% block body %}
+<header class="company-header">
+  <a class="back-link" href="{{ back_url }}" title="Back">‹</a>
+  <div>
+    <h1>General Note</h1>
+    <p>{{ source_label }}</p>
+  </div>
+  <div class="header-actions">
+    <div class="theme-switcher" aria-label="Theme switcher">
+      <button type="button" data-theme-option="light">Light</button>
+      <button type="button" data-theme-option="gold">Black Gold</button>
+    </div>
+  </div>
+</header>
+
+<section class="panel">
+  <div class="panel-title">
+    <h2>Recent Action Plan</h2>
+    <span>{{ note.updated_at if note and note.updated_at else 'Not saved yet' }}</span>
+  </div>
+  <form method="post" action="{{ url_for('save_category_general_note', source=source) }}" class="rich-note-form" data-general-note-form>
+    <input type="hidden" name="content_html" data-general-note-content>
+    <div class="editor-toolbar">
+      <button type="button" data-general-command="bold">B</button>
+      <button type="button" data-general-command="italic">I</button>
+      <button type="button" data-general-link title="Select text, then set its URL">Link</button>
+      <label class="file-tool">Image <input type="file" accept="image/*" data-general-image></label>
+    </div>
+    <div class="rich-editor" contenteditable="true" data-general-editor>{{ note.content_html|safe if note and note.content_html else '' }}</div>
+    <button class="primary-button" type="submit">Save General Note</button>
+  </form>
+</section>
+
+<div class="toast" data-toast></div>
+{% endblock %}

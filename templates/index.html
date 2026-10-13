@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Watchlist · Investment Guide{% endblock %}
+{% block body %}
+<header class="topbar">
+  <div>
+    <p class="eyebrow">Investment Notebook</p>
+    <h1>{{ source_label }}</h1>
+  </div>
+  <div class="header-actions">
+    <div class="theme-switcher" aria-label="Theme switcher">
+      <button type="button" data-theme-option="light">Light</button>
+      <button type="button" data-theme-option="gold">Black Gold</button>
+    </div>
+    <button class="icon-button" data-import title="Import local files">↻</button>
+  </div>
+</header>
+
+<section class="source-tabs" aria-label="Stock source">
+  <a href="{{ url_for('sentiment') }}">情绪指标</a>
+  <a class="{{ 'active' if source == 'gap' else '' }}" href="{{ url_for('index', source='gap', year=selected_year, quarter=selected_quarter, sort=sort) }}">Net Profit Gap Stocks</a>
+  {% for source_key, label in custom_sources.items() %}
+    <a class="{{ 'active' if source == source_key else '' }}" href="{{ url_for('index', source=source_key) }}">{{ label }}</a>
+  {% endfor %}
+</section>
+
+<section class="market-strip">
+  {% if source != 'gap' %}
+    <div class="source-summary">
+      <div>
+        <span>Selected Source</span>
+        <strong>{{ source_label }}</strong>
+      </div>
+      <a class="source-note-link" href="{{ url_for('category_general_note', source=source) }}">General Note</a>
+    </div>
+    <form class="interest-form" method="post" action="{{ url_for('add_custom_stock') }}">
+      <input type="hidden" name="source" value="{{ source }}">
+      <label>Stock Name or Code
+        <input type="text" name="stock_query" placeholder="e.g. 300014 or 亿纬锂能" required>
+      </label>
+      <label>Manual Name
+        <input type="text" name="manual_name" placeholder="Required only when no local match">
+      </label>
+      <button type="submit">Add Stock</button>
+    </form>
+    {% if message %}
+      <div class="form-message">{{ message }}</div>
+    {% endif %}
+    <small>{{ rows|length }} companies</small>
+  {% else %}
+    <div class="source-summary">
+      <div>
+        <span>Selected Source</span>
+        <strong>{{ selected_year }} {{ 'Q1' if selected_quarter == '0331' else 'Q2' if selected_quarter == '0630' else 'Q3' if selected_quarter == '0930' else 'Q4' }}</strong>
+      </div>
+      {% if source_meta and source_meta.is_active %}
+        <b class="active-badge">Active Reporting Season</b>
+      {% endif %}
+    </div>
+    <form class="period-form" method="get" action="{{ url_for('index') }}">
+      <input type="hidden" name="source" value="gap">
+      <label>Year
+        <select name="year">
+          {% for year in years %}
+            <option value="{{ year }}" {{ 'selected' if year == selected_year else '' }}>{{ year }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Quarter
+        <select name="quarter">
+          {% for quarter in quarter_options %}
+            <option value="{{ quarter.value }}" {{ 'selected' if quarter.value == selected_quarter else '' }}>{{ quarter.label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <input type="hidden" name="sort" value="{{ sort }}">
+      <button type="submit">Apply</button>
+    </form>
+    <small>{{ rows|length if source_available else 0 }} active companies</small>
+  {% endif %}
+</section>
+
+{% if source == 'gap' %}
+  <section class="toolbar">
+    <div class="segmented">
+      <a class="{{ 'active' if sort == 'desc' else '' }}" href="{{ url_for('index', source='gap', year=selected_year, quarter=selected_quarter, sort='desc') }}">Gap ↓</a>
+      <a class="{{ 'active' if sort == 'asc' else '' }}" href="{{ url_for('index', source='gap', year=selected_year, quarter=selected_quarter, sort='asc') }}">Gap ↑</a>
+    </div>
+    <span class="muted">Tap a company to open notes, reports, and details.</span>
+  </section>
+{% else %}
+  <section class="toolbar">
+    <span class="muted">Add companies by stock name or numeric code. Tap a company to open the same detail notebook.</span>
+  </section>
+{% endif %}
+
+<section class="stock-list">
+  {% if not source_available %}
+    <div class="empty-state">No data source available for this period.</div>
+  {% else %}
+    {% for row in rows %}
+      <div class="stock-row-wrap">
+        {% if source == 'gap' %}
+          {% set company_href = url_for('company', code=row.code, source='gap', year=selected_year, quarter=selected_quarter, sort=sort) %}
+        {% elif source == 'national_champions' and row.code == 'BTCUSD' %}
+          {% set company_href = url_for('bitcoin_detail') %}
+        {% else %}
+          {% set company_href = url_for('company', code=row.code, source=source) %}
+        {% endif %}
+        <a class="stock-row" href="{{ company_href }}">
+          <div class="stock-main">
+            <strong>{{ row.name }}</strong>
+            <span>{{ row.code }}</span>
+          </div>
+          <div class="sparkline" aria-hidden="true">
+            <i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          </div>
+          <div class="stock-meta">
+            <span>{{ row.announcement_date or 'Notebook stock' }}</span>
+            {% if row.gap_gain is not none %}
+              <b>{{ '%+.2f%%'|format(row.gap_gain * 100) }}</b>
+            {% else %}
+              <b>--</b>
+            {% endif %}
+          </div>
+        </a>
+        {% if source != 'gap' and not (source == 'national_champions' and row.code == 'BTCUSD') %}
+          <form method="post" action="{{ url_for('delete_custom_stock', source=source, code=row.code) }}">
+            <button type="submit" title="Remove from this category">Remove</button>
+          </form>
+        {% endif %}
+      </div>
+    {% else %}
+      <div class="empty-state">{{ 'No companies in this category yet.' if source != 'gap' else 'No active companies in this period.' }}</div>
+    {% endfor %}
+  {% endif %}
+</section>
+{% endblock %}
